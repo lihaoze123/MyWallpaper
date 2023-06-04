@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Live Earth & Weather Forecast</title>
+    <script>
+        let level = 1; // Image level for Himawari-8 image.
+        let mapInterval = 20; // Update map in minute
+        let city = "Zhengzhou"; // City
+        let forecastInterval = 120; // Update forecast in minute
+        // const h8Baseuri = "https://himawari8-dl.nict.go.jp/"; // The baseuri for himawari-8
+        const h8Baseuri = "https://himawari8-dl.chumeng.me/"; // A cdn for himawari-8, if it downs, switch back to the original node above.
+
+        window.wallpaperPropertyListener = {
+            applyUserProperties: function (properties) {
+                if (properties.maplevel) {
+                    level = Number(properties.maplevel.value);
+                    loadEarthTimer();
+                }
+                if (properties.mapscale) {
+                    let scale = Number(properties.mapscale.value);
+                    document.getElementById("live-earth").style.setProperty("--scale", scale);
+                }
+                if (properties.mapupdateinterval) {
+                    mapInterval = Number(properties.mapupdateinterval.value);
+                    loadEarthTimer();
+                }
+                if (properties.city) {
+                    city = properties.city.value;
+                    loadForecastTimer();
+                }
+                if (properties.forecastupdateinterval) {
+                    forecastInterval = Number(properties.forecastupdateinterval.value);
+                    loadForecastTimer();
+                }
+            },
+            setPaused: function (isPaused) {
+                if (!isPaused) {
+                    loadEarthTimer();
+                    loadForecastTimer();
+                }
+            },
+        };
+    </script>
+    <style>
+        @import url("https://fonts.googleapis.com/css?family=Roboto+Condensed:300");
+
+        body {
+            width: 100vw;
+            height: 100vh;
+            padding: 0;
+            margin: 0;
+            background-color: black;
+            color: rgba(224, 230, 235, 0.89);
+            font-family: 'Roboto Condensed', sans-serif;
+            font-weight: 300;
+        }
+
+        .live-earth {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .live-earth-grid {
+            display: grid;
+            grid-template-columns: repeat(var(--level, 1), calc(var(--scale, 1.0) * 550px));
+            grid-template-rows: repeat(var(--level, 1), calc(var(--scale, 1.0) * 550px));
+        }
+
+        .live-earth-grid>img {
+            width: 80%;
+            height: 80%;
+        }
+
+        .countdown {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            left: 100px;
+            bottom: 50px;
+        }
+
+        #weather {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+        }
+
+        #weather>iframe {
+            margin-right: 5%;
+        }
+
+
+        .column,
+        .day,
+        .hour,
+        .min,
+        .sec {
+            display: inline-block;
+            vertical-align: top;
+            font-size: 50px;
+            line-height: 50px;
+        }
+
+        .column {
+            -webkit-transition: -webkit-transform 300ms;
+            transition: -webkit-transform 300ms;
+            transition: transform 300ms;
+            transition: transform 300ms, -webkit-transform 300ms;
+        }
+
+        .day,
+        .hour,
+        .min,
+        .sec {
+            font-size: 20px;
+            -webkit-transition: -webkit-transform 300ms;
+            transition: -webkit-transform 300ms;
+            transition: transform 300ms;
+            transition: transform 300ms, -webkit-transform 300ms;
+            -webkit-transform: translateY(calc(50vh - 15px));
+            transform: translateY(calc(50vh - 15px));
+        }
+
+        .day::after {
+            content: '天';
+        }
+
+        .hour::after {
+            content: '时';
+        }
+
+        .min::after {
+            content: '分';
+        }
+
+        .sec::after {
+            content: '秒';
+        }
+
+        .num {
+            -webkit-transition: opacity 500ms, text-shadow 100ms;
+            transition: opacity 500ms, text-shadow 100ms;
+            opacity: 0.025;
+        }
+
+        .num.visible {
+            opacity: 1.0;
+        }
+
+        .num.close {
+            opacity: 0.25;
+        }
+
+        .num.far {
+            opacity: 0.1;
+        }
+
+        .num.distant {
+            opacity: 0;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="countdown">
+        <div class="column">
+            <div class="num">0</div>
+            <div class="num">1</div>
+            <div class="num">2</div>
+            <div class="num">3</div>
+            <div class="num">4</div>
+            <div class="num">5</div>
+            <div class="num">6</div>
+            <div class="num">7</div>
+            <div class="num">8</div>
+            <div class="num">9</div>
+        </div>
+        <div class="column">
+            <div class="num">0</div>
+            <div class="num">1</div>
+            <div class="num">2</div>
+            <div class="num">3</div>
+            <div class="num">4</div>
+            <div class="num">5</div>
+            <div class="num">6</div>
+            <div class="num">7</div>
+            <div class="num">8</div>
+            <div class="num">9</div>
+        </div>
+        <div class="column">
+            <div class="num">0</div>
+            <div class="num">1</div>
+            <div class="num">2</div>
+            <div class="num">3</div>
+            <div class="num">4</div>
+            <div class="num">5</div>
+            <div class="num">6</div>
+            <div class="num">7</div>
+            <div class="num">8</div>
+            <div class="num">9</div>
+        </div>
+        <div class="day"></div>
+        <div class="column">
+            <div class="num">0</div>
+            <div class="num">1</div>
+            <div class="num">2</div>
+        </div>
+        <div class="column">
+            <div class="num">0</div>
+            <div class="num">1</div>
+            <div class="num">2</div>
+            <div class="num">3</div>
+            <div class="num">4</div>
+            <div class="num">5</div>
+            <div class="num">6</div>
+            <div class="num">7</div>
+            <div class="num">8</div>
+            <div class="num">9</div>
+        </div>
+        <div class="hour"></div>
+        <div class="column">
+            <div class="num">0</div>
+            <div class="num">1</div>
+            <div class="num">2</div>
+            <div class="num">3</div>
+            <div class="num">4</div>
+            <div class="num">5</div>
+        </div>
+        <div class="column">
+            <div class="num">0</div>
+            <div class="num">1</div>
+            <div class="num">2</div>
+            <div class="num">3</div>
+            <div class="num">4</div>
+            <div class="num">5</div>
+            <div class="num">6</div>
+            <div class="num">7</div>
+            <div class="num">8</div>
+            <div class="num">9</div>
+        </div>
+        <div class="min"></div>
+        <div class="column">
+            <div class="num">0</div>
+            <div class="num">1</div>
+            <div class="num">2</div>
+            <div class="num">3</div>
+            <div class="num">4</div>
+            <div class="num">5</div>
+        </div>
+        <div class="column">
+            <div class="num">0</div>
+            <div class="num">1</div>
+            <div class="num">2</div>
+            <div class="num">3</div>
+            <div class="num">4</div>
+            <div class="num">5</div>
+            <div class="num">6</div>
+            <div class="num">7</div>
+            <div class="num">8</div>
+            <div class="num">9</div>
+        </div>
+        <div class="sec"></div>
+    </div>
+    <div class="live-earth">
+        <div class="live-earth-grid" id="live-earth"></div>
+    </div>
+    <div id="weather"></div>
+    <div style="position: fixed; width: 100%; height: 100%;"></div>
+    <script>
+        var size = 50;
+        var columns = Array.from(document.getElementsByClassName('column'));
+        var d = void 0,
+            c = void 0;
+        var classList = ['visible', 'close', 'far', 'far', 'distant', 'distant'];
+
+        function padClock(p, n) {
+            return p + ('0' + n).slice(-2);
+        }
+
+        function getClock() {
+            s = new Date('2024-6-8')
+            d = new Date();
+
+            delta = Math.floor(s - d) / 1000;
+            day = Math.floor(delta / 24 / 3600); delta = delta - day * 24 * 3600;
+            hour = Math.floor(delta / 3600); delta = delta - hour * 3600;
+            min = Math.floor(delta / 60); delta = delta - min * 60;
+            sec = Math.floor(delta);
+
+            day = day.toString();
+
+            return day + [hour, min, sec].reduce(padClock, '');
+        }
+
+        function getClass(n, i2) {
+            return classList.find(function (class_, classIndex) {
+                return Math.abs(n - i2) === classIndex;
+            }) || '';
+        }
+
+        var loop = setInterval(function () {
+            c = getClock();
+
+            columns.forEach(function (ele, i) {
+                var n = +c[i];
+                var offset = -n * size;
+                ele.style.transform = 'translateY(calc(50vh + ' + offset + 'px - ' + size / 2 + 'px))';
+                Array.from(ele.children).forEach(function (ele2, i2) {
+                    ele2.className = 'num ' + getClass(n, i2);
+                });
+            });
+        }, 200 + Math.E * 10);
+
+        let currentDate = "";
+
+        let loadEarth = () => {
+            let liveEarthGrid = document.getElementById("live-earth");
+
+            fetch(h8Baseuri + "himawari8/img/FULL_24h/latest.json")
+                .then(res => res.json())
+                .then(data => {
+                    let latestTime = data.date;
+                    if (currentDate === latestTime && liveEarthGrid.style.getPropertyValue("--level") == level) {
+                        return Promise.reject("Earth image is latest.");
+                    }
+                    currentDate = latestTime;
+                    return latestTime.replace(/[\s\-]/g, "/").replace(/[:]/g, "");
+                })
+                .then(imageid => {
+                    liveEarthGrid.style.setProperty("--level", level);
+                    liveEarthGrid.innerHTML = "";
+                    for (let i = 0; i < level; i++) {
+                        for (let j = 0; j < level; j++) {
+                            let imageuri = `${h8Baseuri}himawari8/img/D531106/${level}d/550/${imageid}_${j}_${i}.png`;
+                            let image = document.createElement('img');
+                            image.src = imageuri;
+                            liveEarthGrid.appendChild(image);
+                        }
+                    }
+                }, reject => {
+                    console.info(reject);
+                });
+        };
+
+
+        let loadForecast = () => {
+            if (!city) {
+                return;
+            }
+
+            fetch(`https://meteoblue.chumeng.me/en/server/search/query3?query=${city}&itemsPerPage=1&page=1`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.results.length == 0) {
+                        return new Promise.reject("No city found");
+                    }
+                    return data.results[0];
+                })
+                .then(city => {
+                    let weather = document.getElementById("weather");
+
+                    weather.innerHTML = `<iframe src="https://meteoblue.chumeng.me/en/weather/widget/daily/${city.url}?geoloc=fixed&days=7&tempunit=CELSIUS&windunit=METER_PER_SECOND&precipunit=MILLIMETER&coloured=monochrome&pictoicon=0&pictoicon=1&maxtemperature=0&maxtemperature=1&mintemperature=0&mintemperature=1&windspeed=0&windspeed=1&windgust=0&winddirection=0&winddirection=1&uv=0&humidity=0&humidity=1&precipitation=0&precipitation=1&precipitationprobability=0&precipitationprobability=1&spot=0&spot=1&pressure=0&layout=dark"  frameborder="0" scrolling="NO" allowtransparency="true" sandbox="allow-same-origin allow-scripts allow-popups allow-popups-to-escape-sandbox" style="width: 378px; height: 420px"></iframe>`;
+                });
+        }
+
+        var earthTimer;
+        var forecastTimer;
+
+        let loadEarthTimer = () => {
+            if (earthTimer) {
+                clearInterval(earthTimer);
+            }
+            earthTimer = setInterval(loadEarth, mapInterval * 60 * 1000);
+            loadEarth();
+        }
+        let loadForecastTimer = () => {
+            if (forecastTimer) {
+                clearInterval(forecastTimer);
+            }
+            forecastTimer = setInterval(loadForecast, forecastInterval * 60 * 1000);
+            loadForecast();
+        }
+
+        loadEarthTimer();
+        loadForecastTimer();
+    </script>
+</body>
+
+</html>
