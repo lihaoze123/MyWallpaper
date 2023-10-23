@@ -133,7 +133,7 @@ function nextSlide() {
 changeGraph();
 
 showSlide(0)
-setInterval(nextSlide, 10000);
+setInterval(nextSlide, 20000);
 
 changeBg();
 setInterval(function () {
