@@ -23,6 +23,7 @@ html,
 body {
     height: 100%;
     width: 100%;
+    overflow: hidden;
 }
 
 .slide {
@@ -559,9 +560,13 @@ body {
     bottom: 0;
 }
 
+.graph>.days {
+    margin-left: 60%;
+}
+
 .graph>.months {
     position: absolute;
-    margin-top: 21%;
+    margin-top: 25%;
     display: grid;
     grid-template-columns:
         calc(var(--week-width) * 4)
@@ -619,45 +624,45 @@ body {
 }
 
 .graph>.squares .level-0 {
-    background-color: #ffa0aa;
+    background-color: #fbc8cd;
 }
 
 .graph>.squares .level-1 {
-    background-color: #ff8c94;
+    background-color: #ffd6d9;
 }
 
 .graph>.squares .level-2 {
-    background-color: #ff787e;
+    background-color: #faa8ac;
 }
 
 .graph>.squares .level-3 {
-    background-color: #ff6469;
+    background-color: #fb8e92;
 }
 
 .graph>.squares .level-4 {
-    background-color: #ff5054;
+    background-color: #fa686b;
 }
 
 .graph>.squares .level-5 {
-    background-color: #ff3c3f;
+    background-color: #fc4c4f;
 }
 
 .graph>.squares .level-6 {
-    background-color: #ff282a;
+    background-color: #df4447;
 }
 
 .graph>.squares .level-7 {
-    background-color: #ff1415;
+    background-color: #c71e1e;
 }
 
 .graph>.squares .level-8 {
-    background-color: #eb0000;
+    background-color: #ac0707;
 }
 
 .graph>.squares .level-9 {
-    background-color: #d70000;
+    background-color: #7d0202;
 }
 
 .graph>.squares .level-10 {
-    background-color: #c30000;
+    background-color: #520202;
 }

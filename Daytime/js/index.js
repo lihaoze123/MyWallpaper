@@ -4,6 +4,10 @@ var d = void 0,
 	c = void 0;
 var classList = ['visible', 'close', 'far', 'far', 'distant', 'distant'];
 
+function dayEq(a, b) {
+	return (a.getMonth() === b.getMonth() && a.getDate() === b.getDate())
+}
+
 function padClock(p, n) {
 	return p + ('0' + n).slice(-2);
 }
@@ -44,7 +48,7 @@ function changeGraph() {
 		var remainingDays = Math.ceil((endDate - currentDate) / (1000 * 60 * 60 * 24));
 
 		var level;
-		if (currentDate >= nowDate) {
+		if (currentDate >= nowDate && !dayEq(currentDate, nowDate)) {
 			level = -1;
 		} else if (remainingDays > 328) {
 			level = 0;
@@ -85,10 +89,6 @@ function changeBg() {
 
 birthdays = [['康哥', new Date('10-28')]]
 
-function dayEq(a, b) {
-	return (a.getMonth() === b.getMonth() && a.getDate() === b.getDate())
-}
-
 function isBirthday() {
 	for (let i = 0; i < birthdays.length; i++) {
 		let e = birthdays[i];
@@ -111,6 +111,10 @@ if (birthday == null) {
 let currentSlide = 0;
 
 function showSlide(slideIndex) {
+	if (slides[currentSlide].classList.contains("disabled")) {
+		nextSlide();
+		return 0;
+	}
 	slides.forEach((slide) => {
 		slide.classList.remove('active');
 	});
