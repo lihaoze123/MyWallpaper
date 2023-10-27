@@ -87,7 +87,7 @@ function changeBg() {
 	document.getElementById("main").style.backgroundImage = `url('img/${currentTime}.jpg')`
 }
 
-birthdays = [['康哥', new Date('10-28')]]
+birthdays = [['康哥(明天)', new Date('10-27')]]
 
 function isBirthday() {
 	for (let i = 0; i < birthdays.length; i++) {
